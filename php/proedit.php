@@ -8,7 +8,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['fname'])) {
 if(isset($_POST['fname']) && 
    isset($_POST['uname'])){
 
-    include "../db_conn.php";
+    include "db_conn.php";
 
     $fname = $_POST['fname'];
     $uname = $_POST['uname'];
@@ -17,11 +17,11 @@ if(isset($_POST['fname']) &&
 
     if (empty($fname)) {
     	$em = "Full name is required";
-    	header("Location: ../proedit.php?error=$em");
+    	header("Location: ../proProfile.php?error=$em");
 	    exit;
     }else if(empty($uname)){
     	$em = "User name is required";
-    	header("Location: ../proedit.php?error=$em");
+    	header("Location: ../proProfile.php?error=$em");
 	    exit;
     }else {
 
@@ -58,16 +58,16 @@ if(isset($_POST['fname']) &&
                $stmt = $conn->prepare($sql);
                $stmt->execute([$fname, $uname, $new_img_name, $id]);
                $_SESSION['fname'] = $fname;
-               header("Location: ../proedit.php?success=Your account has been updated successfully");
+               header("Location: ../proProfile.php?success=Your profile has been updated successfully");
                 exit;
             }else {
                $em = "You can't upload files of this type";
-               header("Location: ../proedit.php?error=$em&$data");
+               header("Location: ../proProfile.php?error=$em&$data");
                exit;
             }
          }else {
             $em = "unknown error occurred!";
-            header("Location: ../proedit.php?error=$em&$data");
+            header("Location: ../proProfile.php?error=$em&$data");
             exit;
          }
 
@@ -79,14 +79,14 @@ if(isset($_POST['fname']) &&
        	$stmt = $conn->prepare($sql);
        	$stmt->execute([$fname, $uname, $id]);
 
-       	header("Location: ../proedit.php?success=Your account has been updated successfully");
+       	header("Location: ../proProfile.php?success=Your profile has been updated successfully");
    	    exit;
       }
     }
 
 
 }else {
-	header("Location: ../proedit.php?error=error");
+	header("Location: ../proProfile.php?error=error");
 	exit;
 }
 
@@ -96,3 +96,4 @@ if(isset($_POST['fname']) &&
 	exit;
 } 
 
+?>

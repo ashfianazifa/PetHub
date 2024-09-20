@@ -1,45 +1,119 @@
+<?php
+session_start();
+
+include 'php/db_conn1.php';
+include 'php/proUser.php';
+$user = getUserById($_SESSION['id'], $conn);
+
+if (!isset($_SESSION['id'])) {
+    echo "Please log in to continue.";
+    exit();
+}
+
+$id = $_SESSION['id'];
+$last_check_sql = "SELECT last_notification_check FROM recusers WHERE user_id = :id";
+$last_check_stmt = $conn->prepare($last_check_sql);
+$last_check_stmt->bindParam(':id', $id, PDO::PARAM_INT);
+$last_check_stmt->execute();
+$last_check_time = $last_check_stmt->fetchColumn();
+$new_notifications_sql = "
+
+ SELECT COUNT(*) 
+FROM (
+    SELECT created_at FROM cart WHERE created_at > :last_check_time AND product_id IN (SELECT product_id FROM productsell WHERE id = :id)
+    UNION ALL
+    SELECT created_at FROM petcart WHERE created_at > :last_check_time AND pet_id IN (SELECT pet_id FROM giveAdopt WHERE id = :id)
+    UNION ALL
+    SELECT created_at FROM reportapro WHERE created_at > :last_check_time AND id = :id AND reportnop = 1
+) AS notifications"; 
+
+$new_notifications_stmt = $conn->prepare($new_notifications_sql);
+$new_notifications_stmt->bindParam(':last_check_time', $last_check_time);
+$new_notifications_stmt->bindParam(':id', $id, PDO::PARAM_INT);
+$new_notifications_stmt->execute();
+$new_notifications_count = $new_notifications_stmt->fetchColumn();
+?>
+
+
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Provider_home</title>
+    <title>Provider Home | Pethub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="bootstrap2.css">
-  </head>
-  <body>
-
-    <!--header design-->
-
-    <header>
-      <nav class="navbar navbar-expand-lg navigation-wrap mb-5">
-        <div class="container">
-          <button class="btn btn-primary mb-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
-            Menu
-          </button>
-          <a class="navbar-brand ms-3" href="#"><img src="cover logo2.png" style="width:20%" class="img-fluid mb-3"></a>
-          <div class="collapse navbar-collapse" id="navbarText">
-            <ul class="navbar-nav ms-5 mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="#home">Home</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#Give adoption">Give adoption</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#Sell product">Sell product</a>
-              </li>
-            </ul>
-          </div>
+    <link rel="stylesheet" href="Bootstrap.css">
+    <link rel="stylesheet" href="footer.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <header class= "header">
+    <nav class="navbar navbar-expand-lg navigation-wrap mb-5">
+      <div class="container">
+        <div class="icon-wrapper margin-auto-right">
+          <i class="fa-solid fa-bars" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample"></i>
+            <span class="menu-text">Menu</span>
         </div>
-      </nav>
-    </header>
+        <div class="collapse navbar-collapse" id="navbarText">
+          <ul class="navbar-nav ms-5 mb-2 mb-lg-0">
+              <li class="ms-5 logo-middle">
+                        <a href="#home">
+                            <img src="new/redpethub.png" alt="Logo" class="logo-middle-img">
+                        </a>
+             </li>
+            <li class="icons ms-5 position-relative">
+              <a href="RecProSearch.php" class="icon-wrapper">
+                <i class="fas fa-search"></i> 
+                <span class="icon-text">Search</span> 
+              </a>
+            </li>
+            <li class="icons ms-5 position-relative">
+              <a href="#home" class="icon-wrapper"> 
+                <i class="fa-solid fa-house-chimney"> </i> 
+                <span class="icon-text">Home</span> 
+              </a>
+            </li>
+            <li class="icons ms-5 position-relative notification-icon">
+              <a href="pronotification.php" class="icon-wrapper">
+                <i class="fa-solid fa-bell"> </i> 
+                <span class="icon-text">Notifications</span>
+                <?php if ($new_notifications_count > 0): ?>
+                  <span class="notification-count"><?php echo $new_notifications_count; ?></span>
+                    <?php endif; ?>
+              </a>
+            </li>
+          </ul>
+ 
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            <li class="nav-item ms-3">
+              <a class="nav-link" href="#About">About</a>
+            </li>
+            <li class="nav-item ms-3">
+              <a class="nav-link" href="giveadoption.php">Give adoption</a>
+            </li>
+            <li class="nav-item ms-3">
+              <a class="nav-link" href="sellproduct.php">Sell product</a>
+            </li>
 
-
- <!-- Offcanvas Sidebar -->
- <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+            <img src="upload/<?= htmlspecialchars($user['pp']) ?>" class="user-pic" onclick="toggleMenu()">
+            <div class="sub-menu-wrap" id="subMenu">
+                <div class="sub-menu">
+                  <div class="user-info">
+                    <img src="upload/<?= htmlspecialchars($user['pp']) ?>">
+                    <h3><?= htmlspecialchars($user['fname']) ?></h3>
+                  </div>
+                </div>
+            </div>
+          </ul>  
+        </div>
+        </div>
+    </nav>
+  </header>
+  
+  <!-- Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
       <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="offcanvasExampleLabel">Menu</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -47,34 +121,29 @@
       <div class="offcanvas-body">
         <ul class="nav flex-column">
           <li class="nav-item">
-            <a class="nav-link" href="proProfile.php">Profile</a>
+            <a class="nav-link" href="proProfile.php"><i class="fa-solid fa-user me-2"></i>Profile</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#About">About</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="logout.php">Sign out</a>
+            <a class="nav-link" href="logout.php"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign out</a>
           </li>
         </ul>
       </div>
     </div>
-
-
-    <!--home design-->
-
+<!--home design-->
     <section id="home">
-      <div id="carouselExampleControls" class="carousel slide me-5" data-bs-ride="carousel">
+      <div id="carouselExampleControls" class="carousel slide " data-bs-ride="carousel">
         <div class="carousel-inner">
           <div class="carousel-item active">
-            <img src="fish.jpg" class="d-block w-100" alt="pic1">
+            <img src="slide/c.jpg" class="d-block l-10 w-100" alt="pic1">
           </div>
           <div class="carousel-item">
-            <img src="dear.jpg" class="d-block w-100" alt="pic2">
+            <img src="slide/d.jpg" class="d-block w-100" alt="pic2">
           </div>
           <div class="carousel-item">
-            <img src="cat.jpg" class="d-block w-100" alt="pic3">
+            <img src="slide/b.jpg" class="d-block w-100" alt="pic3">
           </div>
         </div>
+
         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
           <span class="carousel-control-prev-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Previous</span>
@@ -85,112 +154,9 @@
         </button>
       </div>
     </section>
-
-    <!--Give adoption design-->
-    
-    <section id="Give adoption">
-    <form method="POST" class="rounded bg-white shadow p-5">
-    <div class="text-area">
-                <div class="text mb-5">
-                    <h3>Give adoption</h3>
-                </div>
-        </div>
-            <div class="mb-5">
-             <!-- <label for="floatingcname" class="form-label">Catagory name</label>
-              <input type="text" name="cname" class="form-control" id="floatingcname" required>-->
-              <div class="dropdown">
-  <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Pet Category
-  </button>
-  <ul class="dropdown-menu mb-5">
-    <li><a class="dropdown-item" href="#Give adoption">Cat</a></li>
-    <li><a class="dropdown-item" href="#Give adoption">Dog</a></li>
-    <li><a class="dropdown-item" href="#Give adoption">Fish</a></li>
-    <li><a class="dropdown-item" href="#Give adoption">Bird</a></li>
-    <li><a class="dropdown-item" href="#Give adoption">Rabbit</a></li>
-    <li><a class="dropdown-item" href="#Give adoption">Hamster</a></li>
-    <li><a class="dropdown-item" href="#Give adoption">Turtle</a></li>
-  </ul>
-</div>
-            <div class="mb-5">
-              <label for="floatingpname" class="form-label mt-5">Age</label>
-              <input type="text" name="age" class="form-control" id="floatingpname" required>
-            </div>
-            
-            <div class="mb-5">
-                <label for="exampleFormControlTextarea1" class="form-label">Description</label>
-                <textarea type="text" name="des" class="form-control" id="exampleFormControlTextarea1" rows="3" required></textarea>
-            </div>
-            <div class="mb-5">
-                <label for="exampleFormControlTextarea1" class="form-label">Contact Information</label>
-                <textarea type="text" name="cinfo" class="form-control" id="exampleFormControlTextarea1" rows="3" required></textarea>
-            </div>
-
-            <div>
-                <label for="formFileLg" class="form-label">Upload picture</label>
-                <input type="file" name="pic" class="form-control form-control-lg mb-5" id="formFileLg" accept="image/*" required>
-            </div>
-            <button type="submit" name="submit" class="btn btn-primary submit_btn w-20 my-4">Upload</button>
-          </form>
-    </section>
-
-    <!--Sell product design-->
-    
-    <section id="Sell product">
-    <form method="POST" class="rounded bg-white shadow p-5">
-    <div class="text-area">
-                <div class="text mb-5">
-                    <h3>Sell product</h3>
-                </div>
-        </div>
-        <div class="dropdown mb-5">
-  <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Product Category
-  </button>
-  <ul class="dropdown-menu">
-    <li><a class="dropdown-item" href="#Sell product">Food</a></li>
-    <li><a class="dropdown-item" href="#Sell product">Medicine</a></li>
-    <li><a class="dropdown-item" href="#Sell product">Accessories</a></li>
-    <li><a class="dropdown-item" href="#Sell product">Toy</a></li>
-  </ul>
-</div>
-            <div class="mb-5">
-              <label for="floatingpname" class="form-label">Product name</label>
-              <input type="text" name="prodname" class="form-control" id="floatingpname" required>
-            </div>
-            <div class="dropdown mb-5">
-  <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Usage State 
-  </button>
-  <ul class="dropdown-menu">
-    <li><a class="dropdown-item" href="#Sell product">Used</a></li>
-    <li><a class="dropdown-item" href="#Sell product">New</a></li>
-  </ul>
-</div>
-            <div class="mb-5">
-                <label for="exampleFormControlTextarea1" class="form-label">Description</label>
-                <textarea type="text" name="proddes" class="form-control mb-5" id="exampleFormControlTextarea1" rows="3" required></textarea>
-            </div>
-            <div class="mb-5">
-                <label for="exampleFormControlTextarea1" class="form-label">Contact Information</label>
-                <textarea type="text" name="prodcinfo" class="form-control" id="exampleFormControlTextarea1" rows="3" required></textarea>
-            </div>
-            <div>
-            <label for="floatingprice" class="form-label">Price</label>
-              <input type="text" name="price" class="form-control mb-5" id="floatingpname" required>
-            </div>
-            <div>
-                <label for="formFileLg" class="form-label">Upload picture</label>
-                <input type="file" name="prodpic" class="form-control form-control-lg mb-5" id="formFileLg" accept="image/*" required>
-            </div>
-            <button type="submit" name="submit" class="btn btn-primary submit_btn w-20 my-4">Upload</button>
-          </form>
-    </section>
-    
 <!--about design-->
-
-<section id="About">
-<div class="text-area ms-5">
+    <section id="About">
+      <div class="text-area ms-5">
             <div class="text">
                 <div class="text mb-3 mt-5"><h3>About PetHub</h3></div>
                 <p>
@@ -229,6 +195,59 @@
                 </p>   
             </div>
         </div>
-</section>
+    </section>
+
+<!--bottom line--> 
+
+<footer class="footer">
+  	 <div class="containerf">
+  	 	<div class="row">
+  	 		<div class="footer-col">
+  	 			<h4>CATEGORIES</h4>
+  	 			<ul>
+            <li><a href="giveadoption.php">Give pet for adoption</a></li>
+            <li><a href="adoptdetails.php">Adoption Posts</a></li>
+  	 				<li><a href="sellproduct.php">Sell Products</a></li>
+             <li><a href="selldetails.php">Sell Posts</a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>QUICK LINKS</h4>
+  	 			<ul>
+  	 				<li><a href="#home">HOME</a></li>
+             <li><a href="#About">About us</a></li>
+             <li><a href="proProfile.php">Profile</a></li>
+  	 				<li><a href="logout.php">Sign Out </a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>CONTACT</h4>
+  	 			<ul>
+  	 				<li><a href="#">pethub@gmail.com</a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>FOLLOW US</h4>
+  	 			<div class="social-links">
+  	 				<a href="#"><i class="fab fa-facebook-f"></i></a>
+  	 				<a href="#"><i class="fab fa-twitter"></i></a>
+  	 				<a href="#"><i class="fab fa-instagram"></i></a>
+  	 				<a href="#"><i class="fab fa-linkedin-in"></i></a>
+  	 			</div>
+  	 		</div>
+  	 	</div>
+  	 </div>
+     <div class="bottom-bar">
+          <p>&copy; 2024 PetHub | All Rights Reserved</p>
+      </div>
+  </footer>
+
+<script>
+  let subMenu = document.getElementById("subMenu");
+  function toggleMenu() {
+    subMenu.classList.toggle("open-menu");
+  }
+</script>
+
   </body>
 </html>

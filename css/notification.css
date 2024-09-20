@@ -1,0 +1,23 @@
+        /* Basic styles for notifications */
+        #notifications-container {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .notification {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .notification p {
+            margin: 0;
+        }
+        .notification small {
+            color: #888;
+        }
+        .notification:last-child {
+            border-bottom: none;
+        }

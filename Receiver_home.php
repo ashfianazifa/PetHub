@@ -1,44 +1,117 @@
+<?php
+session_start();
+include 'php/db_conn1.php';
+include 'php/recUser.php';
+$user = getUserById($_SESSION['user_id'], $conn);
+
+if (!isset($_SESSION['user_id'])) {
+    echo "Please log in to continue.";
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+$last_check_sql = "SELECT last_notification_check FROM prousers WHERE id = :user_id";
+$last_check_stmt = $conn->prepare($last_check_sql);
+$last_check_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+$last_check_stmt->execute();
+$last_check_time = $last_check_stmt->fetchColumn();
+
+$new_notifications_sql = "
+SELECT COUNT(*) 
+FROM (
+    SELECT created_at FROM reportarec WHERE created_at > :last_check_time AND user_id = :user_id AND reportnor = 1
+) AS notifications";
+$new_notifications_stmt = $conn->prepare($new_notifications_sql);
+$new_notifications_stmt->bindParam(':last_check_time', $last_check_time);
+$new_notifications_stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+$new_notifications_stmt->execute();
+$new_notifications_count = $new_notifications_stmt->fetchColumn();
+
+?>
+
+
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Receiver_home</title>
+    <title>Receiver Home | Pethub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="bootstrap2.css">
+    <link rel="stylesheet" href="Bootstrap.css">
+    <link rel="stylesheet" href="Footer.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   </head>
-  <body>
+<body>
 
     <!--header design-->
 
-    <header>
+    <header class= "header">
       <nav class="navbar navbar-expand-lg navigation-wrap mb-5">
         <div class="container">
-          <button class="btn btn-primary mb-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
-            Menu
-          </button>
-          <a class="navbar-brand ms-3" href="#"><img src="cover logo2.png" style="width:20%" class="img-fluid mb-3"></a>
+        <div class="icon-wrapper margin-auto-right">
+          <i class="fa-solid fa-bars" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample"></i> 
+          <span class="menu-text">Menu</span>
+           </div>
+           
           <div class="collapse navbar-collapse" id="navbarText">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="#home">Home</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#Take adoption">Take adoption</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#Buy product">Buy product</a>
-              </li>
-            </ul>
+            
+            <ul class="navbar-nav ms-5 mb-2 mb-lg-0">
+              <li class="ms-5 logo-middle">
+                        <a href="#home">
+                            <img src="new/redpethub.png" alt="Logo" class="logo-middle-img">
+                        </a>
+               </li>
+             <li class="icons ms-5 position-relative">
+               <a href="#home" class="icon-wrapper">
+                 <i class="fa-solid fa-house-chimney"> </i> 
+                 <span class="icon-text">Home</span> </a>
+             </li>
+             <li class="icons ms-5 position-relative notification-icon">
+               <a href="notification.php" class="icon-wrapper"> 
+                <i class="fa-solid fa-bell"> </i> 
+                <span class="icon-text">Notifications</span>
+                <?php if ($new_notifications_count > 0): ?>
+                       <span class="notification-count"><?php echo $new_notifications_count; ?></span>
+                <?php endif; ?>
+              </a>
+             </li>
+           </ul>
+      
+           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+           <li class="nav-item ms-3">
+              <a class="nav-link"  href="#About">About</a>
+             </li>
+             <li class="nav-item ms-3">
+              <a class="nav-link"  href="takeadoption.php">Take adoption</a>
+             </li>
+             <li class="nav-item ms-3">
+               <a class="nav-link" href="buyproduct.php">Buy product</a>
+             </li>
+             <li class="nav-item ms-3">
+               <a class="nav-link" href="vet.php">Hospitals and Shops</a>
+             </li>
+
+            <img src="upload/<?= htmlspecialchars($user['pp']) ?>" class="user-pic" onclick="toggleMenu()">
+            <div class="sub-menu-wrap" id="subMenu">
+                <div class="sub-menu">
+                  <div class="user-info">
+                    <img src="upload/<?= htmlspecialchars($user['pp']) ?>">
+                    <h3><?= htmlspecialchars($user['fname']) ?></h3>
+                  </div>
+                </div>
+            </div>
+           </ul>  
           </div>
         </div>
       </nav>
     </header>
 
 <!-- Offcanvas Sidebar -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
       <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="offcanvasExampleLabel">Menu</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -46,33 +119,28 @@
       <div class="offcanvas-body">
         <ul class="nav flex-column">
           <li class="nav-item">
-            <a class="nav-link" href="recProfile.php">Profile</a>
+            <a class="nav-link" href="recProfile.php"><i class="fa-solid fa-user me-2"></i>Profile</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#About">About</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="login.php">Sign out</a>
+            <a class="nav-link" href="logout.php"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign out</a>
           </li>
         </ul>
       </div>
     </div>
 
-
-
     <!--home design-->
 
     <section id="home">
-      <div id="carouselExampleControls" class="carousel slide me-5" data-bs-ride="carousel">
+      <div id="carouselExampleControls" class="carousel slide " data-bs-ride="carousel">
         <div class="carousel-inner">
           <div class="carousel-item active">
-            <img src="fish.jpg" class="d-block w-100" alt="pic1">
+            <img src="slide/r1.jpg" class="d-block w-100" alt="pic1">
           </div>
           <div class="carousel-item">
-            <img src="dear.jpg" class="d-block w-100" alt="pic2">
+            <img src="slide/r2.jpg" class="d-block w-100 " alt="pic2">
           </div>
           <div class="carousel-item">
-            <img src="cat.jpg" class="d-block w-100" alt="pic3">
+            <img src="slide/r3.jpg" class="d-block w-100" alt="pic3">
           </div>
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
@@ -87,28 +155,8 @@
     </section>
 
 
-    <!--Take adoption design-->
-    
-    <section id="Take adoption">
-    <form method="POST" class="rounded bg-white shadow p-5">
-    <div class="text-area">
-                <div class="text mb-5">
-                    <h3>Take adoption</h3>
-                </div>
-    </section>
 
-    <!--Buy product design-->
-    
-    <section id="Buy product">
-    <form method="POST" class="rounded bg-white shadow p-5">
-    <div class="text-area">
-                <div class="text mb-5">
-                    <h3>Buy product</h3>
-                </div>
-    </section>
-    
 <!--about design-->
-
 <section id="About">
 <div class="text-area ms-5">
             <div class="text">
@@ -150,9 +198,60 @@
             </div>
         </div>
 </section>
+<!--bottom line--> 
+<footer class="footer">
+  	 <div class="containerf">
+  	 	<div class="row">
+  	 		<div class="footer-col">
+  	 			<h4>CATEGORIES</h4>
+  	 			<ul>
+            <li><a href="RecTakeSearch.php">Search for Pet</a></li>
+  	 				<li><a href="takeadoption.php">Adopt Pet</a></li>
+            <li><a href="petcart.php">Cart(PET)</a></li>
+            <li><a href="RecBuySearch.php">Search for Products</a></li>
+  	 				<li><a href="buyproduct.php">Buy Products</a></li>
+            <li><a href="cart2.php">Cart(Products)</a></li>
 
 
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>QUICK LINKS</h4>
+  	 			<ul>
+  	 				<li><a href="#home">HOME</a></li>
+             <li><a href="#About">About us</a></li>
+             <li><a href="recProfile.php">Profile</a></li>
+  	 				<li><a href="logout.php">Sign Out </a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>CONTACT</h4>
+  	 			<ul>
+  	 				<li><a href="#">pethub@gmail.com</a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>FOLLOW US</h4>
+  	 			<div class="social-links">
+  	 				<a href="#"><i class="fab fa-facebook-f"></i></a>
+  	 				<a href="#"><i class="fab fa-twitter"></i></a>
+  	 				<a href="#"><i class="fab fa-instagram"></i></a>
+  	 				<a href="#"><i class="fab fa-linkedin-in"></i></a>
+  	 			</div>
+  	 		</div>
+  	 	</div>
+  	 </div>
+     <div class="bottom-bar">
+          <p>&copy; 2024 PetHub | All Rights Reserved</p>
+      </div>
+  </footer>
 
+  <script>
+  let subMenu = document.getElementById("subMenu");
+  function toggleMenu() {
+    subMenu.classList.toggle("open-menu");
+  }
+</script>
 
-  </body>
+</body>
 </html>

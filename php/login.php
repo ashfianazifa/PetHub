@@ -4,7 +4,7 @@ session_start();
 if(isset($_POST['uname']) && 
    isset($_POST['pass'])){
 
-    include "../db_conn.php";
+    include "db_conn.php";
 
     $uname = $_POST['uname'];
     $pass = $_POST['pass'];
@@ -33,6 +33,7 @@ if(isset($_POST['uname']) &&
           $id =  $user['id'];
           $pp =  $user['pp'];
 
+
           if($username === $uname){
              if(password_verify($pass, $password)){
                  $_SESSION['id'] = $id;
@@ -42,13 +43,13 @@ if(isset($_POST['uname']) &&
                  header("Location: ../Provider_home.php");
                  exit;
              }else {
-               $em = "Incorrect User name or password";
+               $em = "Incorrect  password";
                header("Location: ../login.php?error=$em&$data");
                exit;
             }
 
           }else {
-            $em = "Incorrect User name or password";
+            $em = "Incorrect User name";
             header("Location: ../login.php?error=$em&$data");
             exit;
          }
@@ -65,31 +66,31 @@ if(isset($_POST['uname']) &&
              $username =  $user['username'];
              $password =  $user['password'];
              $fname =  $user['fname'];
-             $id =  $user['id'];
+             $user_id1 = $user['user_id'];
              $pp =  $user['pp'];
 
              if($username === $uname){
                 if(password_verify($pass, $password)){
-                    $_SESSION['id'] = $id;
+                    $_SESSION['user_id'] = $user_id1;
                     $_SESSION['fname'] = $fname;
                     $_SESSION['pp'] = $pp;
 
                     header("Location: ../Receiver_home.php");
                     exit;
                 }else {
-                  $em = "Incorrect User name or password";
+                  $em = "Incorrect password";
                   header("Location: ../login.php?error=$em&$data");
                   exit;
                }
 
              }else {
-               $em = "Incorrect User name or password";
+               $em = "Incorrect User name";
                header("Location: ../login.php?error=$em&$data");
                exit;
             }
 
          }else {
-            $em = "Incorrect User name or password";
+            $em = "Incorrect User name";
             header("Location: ../login.php?error=$em&$data");
             exit;
          }
